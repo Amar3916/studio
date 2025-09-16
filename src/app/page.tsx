@@ -52,8 +52,9 @@ export default function DashboardPage() {
             )}
           </div>
         </Card>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
+        
+        <div className="grid gap-4 md:grid-cols-2">
+           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Profile Completion</CardTitle>
               <User className="h-4 w-4 text-muted-foreground" />
@@ -76,8 +77,9 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
         <div className="grid gap-4 md:grid-cols-2">
-          {quickLinks.slice(2).map((link) => (
+          {quickLinks.map((link) => (
              <Card key={link.href} className="hover:bg-muted/50 transition-colors">
                 <Link href={link.href} className="block h-full">
                  <CardHeader className="flex flex-row items-center gap-4">
