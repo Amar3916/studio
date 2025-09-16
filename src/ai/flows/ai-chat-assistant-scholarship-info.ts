@@ -10,7 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {googleSearchTool} from '@genkit-ai/googleai';
+import {googleSearchTool} from '@genkit-ai/googleai/tools';
 
 const AnswerScholarshipQuestionInputSchema = z.object({
   question: z.string().describe('The question about scholarships.'),
