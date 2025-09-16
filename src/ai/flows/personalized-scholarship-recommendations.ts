@@ -9,6 +9,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import scholarships from '@/data/scholarships.json';
 
 // Define the schema for student profile data (input)
 const ScholarshipRecommendationInputSchema = z.object({
@@ -18,6 +19,15 @@ const ScholarshipRecommendationInputSchema = z.object({
   categoryInfo: z.string().describe('Category of student, including demographic information and any special circumstances.'),
 });
 export type ScholarshipRecommendationInput = z.infer<typeof ScholarshipRecommendationInputSchema>;
+
+// Define the schema for a single scholarship from our data file
+const ScholarshipSchema = z.object({
+  scholarshipName: z.string(),
+  description: z.string(),
+  amount: z.string(),
+  deadline: z.string(),
+  link: z.string(),
+});
 
 // Define the schema for scholarship recommendations (output)
 const ScholarshipRecommendationOutputSchema = z.array(z.object({
@@ -38,20 +48,32 @@ export async function getScholarshipRecommendations(input: ScholarshipRecommenda
 // Define the prompt for generating scholarship recommendations
 const personalizedScholarshipRecommendationsPrompt = ai.definePrompt({
   name: 'personalizedScholarshipRecommendationsPrompt',
-  input: {schema: ScholarshipRecommendationInputSchema},
+  input: {
+    schema: z.object({
+      studentProfile: ScholarshipRecommendationInputSchema,
+      scholarships: z.array(ScholarshipSchema)
+    })
+  },
   output: {schema: ScholarshipRecommendationOutputSchema},
   prompt: `You are an AI assistant specializing in providing personalized scholarship recommendations to students.
 
-  Based on the student's profile data, identify relevant scholarships and financial aid opportunities.
-  Provide a list of scholarships with their names, descriptions, amounts, deadlines, and application links. Also include match score, AI calculates % fit between student profile and each scholarship.
+  Your task is to analyze the provided student profile and a list of available scholarships.
+  Based on how well each scholarship matches the student's profile, you must generate a match score from 0 to 100.
+
+  Return a list of the scholarships, including the calculated match score for each.
+  Only return scholarships with a match score of 50 or higher.
+  Order the results from the highest match score to the lowest.
 
   Student Profile:
-  Academic Information: {{{academicInfo}}}
-  Financial Background: {{{financialInfo}}}
-  Achievements: {{{achievementInfo}}}
-  Category: {{{categoryInfo}}}
+  Academic Information: {{{studentProfile.academicInfo}}}
+  Financial Background: {{{studentProfile.financialInfo}}}
+  Achievements: {{{studentProfile.achievementInfo}}}
+  Personal Background: {{{studentProfile.categoryInfo}}}
 
-  Scholarship Recommendations:
+  Available Scholarships (JSON format):
+  {{{json scholarships}}}
+
+  Your response should be a JSON array of scholarship objects that includes the matchScore.
   `,
 });
 
@@ -62,8 +84,16 @@ const personalizedScholarshipRecommendationsFlow = ai.defineFlow(
     inputSchema: ScholarshipRecommendationInputSchema,
     outputSchema: ScholarshipRecommendationOutputSchema,
   },
-  async input => {
-    const {output} = await personalizedScholarshipRecommendationsPrompt(input);
-    return output!;
+  async (studentProfile) => {
+    // In a real-world RAG application, you would fetch this from a vector DB.
+    // For this example, we'll just use the full list from our JSON file.
+    const availableScholarships = scholarships;
+    
+    const {output} = await personalizedScholarshipRecommendationsPrompt({
+        studentProfile,
+        scholarships: availableScholarships
+    });
+    
+    return output || [];
   }
 );

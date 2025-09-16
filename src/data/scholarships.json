@@ -1,0 +1,59 @@
+
+[
+  {
+    "scholarshipName": "STEM Achievers Grant",
+    "description": "For high-achieving students pursuing degrees in Science, Technology, Engineering, or Mathematics.",
+    "amount": "$10,000",
+    "deadline": "2024-12-15",
+    "link": "https://example.com/stem-achievers"
+  },
+  {
+    "scholarshipName": "Future Leaders Award",
+    "description": "Awarded to students with a proven track record of leadership and community involvement.",
+    "amount": "$5,000",
+    "deadline": "2025-01-31",
+    "link": "https://example.com/future-leaders"
+  },
+  {
+    "scholarshipName": "Creative Arts Scholarship",
+    "description": "Supports talented students in the fields of visual arts, music, theater, and dance.",
+    "amount": "$7,500",
+    "deadline": "2025-02-28",
+    "link": "https://example.com/creative-arts"
+  },
+  {
+    "scholarshipName": "First-Generation Scholars Program",
+    "description": "Financial assistance for students who are the first in their family to attend college.",
+    "amount": "$8,000",
+    "deadline": "2025-03-15",
+    "link": "https://example.com/first-gen"
+  },
+  {
+    "scholarshipName": "Women in Technology Grant",
+    "description": "Encourages and supports women pursuing careers in the tech industry.",
+    "amount": "$12,000",
+    "deadline": "2025-04-01",
+    "link": "https://example.com/women-in-tech"
+  },
+  {
+    "scholarshipName": "Environmental Advocacy Scholarship",
+    "description": "For students passionate about environmental science and conservation efforts.",
+    "amount": "$6,000",
+    "deadline": "2025-04-22",
+    "link": "https://example.com/enviro-advocacy"
+  },
+  {
+    "scholarshipName": "Community Volunteer Award",
+    "description": "Recognizes students with outstanding commitment to volunteer service.",
+    "amount": "$3,000",
+    "deadline": "2025-05-01",
+    "link": "https://example.com/community-volunteer"
+  },
+  {
+    "scholarshipName": "Global Citizen Scholarship",
+    "description": "For students interested in international relations, diplomacy, and global studies.",
+    "amount": "$15,000",
+    "deadline": "2024-11-30",
+    "link": "https://example.com/global-citizen"
+  }
+]
