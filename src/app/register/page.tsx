@@ -11,6 +11,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import axios, { AxiosError } from 'axios';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name is too short.'),
@@ -31,13 +32,24 @@ export default function RegisterPage() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    toast({
-      title: 'Registration Successful',
-      description: 'Your account has been created.',
-    });
-    router.push('/login');
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const response = await axios.post('/api/auth/register', values);
+      if (response.status === 201) {
+        toast({
+          title: 'Registration Successful',
+          description: 'Your account has been created. Please log in.',
+        });
+        router.push('/login');
+      }
+    } catch (error) {
+      const axiosError = error as AxiosError<{ message: string }>;
+      toast({
+        variant: 'destructive',
+        title: 'Registration Failed',
+        description: axiosError.response?.data?.message || 'An unexpected error occurred.',
+      });
+    }
   }
 
   return (
@@ -99,8 +111,8 @@ export default function RegisterPage() {
                   )}
                 />
 
-                <Button type="submit" className="w-full">
-                  Create Account
+                <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                   {form.formState.isSubmitting ? 'Creating Account...' : 'Create Account'}
                 </Button>
               </form>
             </Form>

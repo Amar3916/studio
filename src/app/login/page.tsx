@@ -12,6 +12,7 @@ import * as z from 'zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import axios, { AxiosError } from 'axios';
 
 const formSchema = z.object({
   email: z.string().email('Invalid email address.'),
@@ -31,16 +32,25 @@ export default function LoginPage() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // In a real app, you'd call an API to verify credentials.
-    // For now, we'll simulate a successful login.
-    login({ name: 'Test User', email: values.email });
-    
-    toast({
-      title: 'Login Successful',
-      description: 'Welcome back!',
-    });
-    router.push('/');
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const response = await axios.post('/api/auth/login', values);
+      if (response.status === 200) {
+        login(response.data.user);
+        toast({
+          title: 'Login Successful',
+          description: 'Welcome back!',
+        });
+        router.push('/');
+      }
+    } catch (error) {
+      const axiosError = error as AxiosError<{ message: string }>;
+      toast({
+        variant: 'destructive',
+        title: 'Login Failed',
+        description: axiosError.response?.data?.message || 'An unexpected error occurred.',
+      });
+    }
   }
 
   return (
@@ -88,8 +98,8 @@ export default function LoginPage() {
                   )}
                 />
 
-                <Button type="submit" className="w-full">
-                  Sign in
+                <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? 'Signing in...' : 'Sign in'}
                 </Button>
               </form>
             </Form>
