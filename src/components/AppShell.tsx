@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -23,6 +24,8 @@ import {
   FileText,
   Bot,
   BookOpen,
+  LogIn,
+  UserPlus,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -42,8 +45,19 @@ const navItems = [
   { href: '/assistant', label: 'AI Assistant', icon: Bot },
 ];
 
+// A basic check, you can replace this with a real auth context
+const useAuth = () => ({ isAuthenticated: true, user: { name: 'Student', email: 'student@example.com' } });
+
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { isAuthenticated, user } = useAuth();
+
+  const isAuthPage = pathname === '/login' || pathname === '/register';
+
+  if (isAuthPage) {
+    return <>{children}</>;
+  }
 
   return (
     <SidebarProvider>
@@ -86,26 +100,43 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex-1">
             {/* Can add breadcrumbs or page title here */}
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="https://picsum.photos/seed/user/100/100" alt="User" />
-                  <AvatarFallback>U</AvatarFallback>
-                </Avatar>
+          {isAuthenticated ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="https://picsum.photos/seed/user/100/100" alt="User" />
+                    <AvatarFallback>{user.name?.[0]?.toUpperCase() ?? 'U'}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{user.name}</p>
+                    <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Log out</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="flex items-center gap-2">
+               <Button variant="outline" size="sm" asChild>
+                  <Link href="/login">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Login
+                  </Link>
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">Student</p>
-                  <p className="text-xs leading-none text-muted-foreground">student@example.com</p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Log out</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              <Button size="sm" asChild>
+                  <Link href="/register">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Register
+                  </Link>
+              </Button>
+            </div>
+          )}
         </header>
         <main className="flex-1 overflow-y-auto">
             {children}
