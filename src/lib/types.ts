@@ -1,4 +1,10 @@
+
 import type { ScholarshipRecommendationOutput } from '@/ai/flows/personalized-scholarship-recommendations';
+
+export type User = {
+    name: string | null;
+    email: string;
+};
 
 export type Profile = {
   academicInfo: string;

@@ -36,6 +36,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/hooks/useAuth';
+
 
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -45,13 +47,10 @@ const navItems = [
   { href: '/assistant', label: 'AI Assistant', icon: Bot },
 ];
 
-// A basic check, you can replace this with a real auth context
-const useAuth = () => ({ isAuthenticated: true, user: { name: 'Student', email: 'student@example.com' } });
-
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { isAuthenticated, user } = useAuth();
+  const { user, logout } = useAuth();
 
   const isAuthPage = pathname === '/login' || pathname === '/register';
 
@@ -100,12 +99,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex-1">
             {/* Can add breadcrumbs or page title here */}
           </div>
-          {isAuthenticated ? (
+          {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="https://picsum.photos/seed/user/100/100" alt="User" />
+                    <AvatarImage src="https://picsum.photos/seed/user/100/100" alt={user.name ?? 'User'} />
                     <AvatarFallback>{user.name?.[0]?.toUpperCase() ?? 'U'}</AvatarFallback>
                   </Avatar>
                 </Button>
@@ -118,7 +117,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Log out</DropdownMenuItem>
+                <DropdownMenuItem onClick={logout}>Log out</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (

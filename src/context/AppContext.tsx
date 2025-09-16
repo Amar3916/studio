@@ -1,19 +1,22 @@
+
 'use client';
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode, Dispatch } from 'react';
-import { Profile, Application, ApplicationStatus, Scholarship } from '@/lib/types';
+import { Profile, Application, ApplicationStatus, Scholarship, User } from '@/lib/types';
 
 // State and Action Types
 type State = {
   profile: Profile;
   applications: Application[];
+  user: User | null;
 };
 
 type Action =
   | { type: 'SET_PROFILE'; payload: Profile }
   | { type: 'ADD_APPLICATION'; payload: Scholarship }
   | { type: 'UPDATE_APPLICATION_STATUS'; payload: { scholarshipName: string; status: ApplicationStatus } }
-  | { type: 'HYDRATE_STATE'; payload: State };
+  | { type: 'HYDRATE_STATE'; payload: Partial<State> }
+  | { type: 'SET_USER'; payload: User | null };
 
 const initialState: State = {
   profile: {
@@ -23,6 +26,7 @@ const initialState: State = {
     categoryInfo: '',
   },
   applications: [],
+  user: null,
 };
 
 // Reducer
@@ -49,7 +53,9 @@ const appReducer = (state: State, action: Action): State => {
         ),
       };
     case 'HYDRATE_STATE':
-        return action.payload;
+        return { ...state, ...action.payload };
+    case 'SET_USER':
+      return { ...state, user: action.payload };
     default:
       return state;
   }
@@ -62,6 +68,8 @@ type AppContextType = {
   setProfile: (profile: Profile) => void;
   addApplication: (scholarship: Scholarship) => void;
   updateApplicationStatus: (scholarshipName: string, status: ApplicationStatus) => void;
+  login: (user: User) => void;
+  logout: () => void;
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -83,7 +91,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      localStorage.setItem('scholarAIState', JSON.stringify(state));
+        const stateToStore = {
+            profile: state.profile,
+            applications: state.applications,
+            user: state.user
+        }
+      localStorage.setItem('scholarAIState', JSON.stringify(stateToStore));
     } catch (error) {
         console.error("Could not save state to localStorage", error);
     }
@@ -101,12 +114,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'UPDATE_APPLICATION_STATUS', payload: { scholarshipName, status } });
   };
 
+  const login = (user: User) => {
+    dispatch({ type: 'SET_USER', payload: user });
+  };
+
+  const logout = () => {
+    dispatch({ type: 'SET_USER', payload: null });
+  };
+
   const contextValue = {
     state,
     dispatch,
     setProfile,
     addApplication,
     updateApplicationStatus,
+    login,
+    logout,
   };
 
   return <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>;
@@ -121,8 +144,11 @@ export function useAppContext() {
   return {
     profile: context.state.profile,
     applications: context.state.applications,
+    user: context.state.user,
     setProfile: context.setProfile,
     addApplication: context.addApplication,
     updateApplicationStatus: context.updateApplicationStatus,
+    login: context.login,
+    logout: context.logout
   };
 }

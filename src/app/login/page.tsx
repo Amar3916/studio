@@ -11,6 +11,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 
 const formSchema = z.object({
   email: z.string().email('Invalid email address.'),
@@ -20,6 +21,7 @@ const formSchema = z.object({
 export default function LoginPage() {
   const { toast } = useToast();
   const router = useRouter();
+  const { login } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -30,7 +32,10 @@ export default function LoginPage() {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
+    // In a real app, you'd call an API to verify credentials.
+    // For now, we'll simulate a successful login.
+    login({ name: 'Test User', email: values.email });
+    
     toast({
       title: 'Login Successful',
       description: 'Welcome back!',
