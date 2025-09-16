@@ -2,6 +2,7 @@
 import type { ScholarshipRecommendationOutput } from '@/ai/flows/personalized-scholarship-recommendations';
 
 export type User = {
+    id?: string;
     name: string | null;
     email: string;
 };
