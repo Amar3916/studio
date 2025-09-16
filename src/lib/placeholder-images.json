@@ -1,3 +1,10 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "dashboard-hero",
+      "description": "A student wearing headphones studying at a modern desk with a laptop and books.",
+      "imageUrl": "https://picsum.photos/seed/scholar-desk/600/400",
+      "imageHint": "student studying"
+    }
+  ]
 }

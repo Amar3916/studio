@@ -1,0 +1,83 @@
+'use client';
+
+import { useAppContext } from '@/context/AppContext';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ApplicationStatus, Scholarship } from '@/lib/types';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { FileText, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
+
+const statusColors: { [key in ApplicationStatus]: string } = {
+  'Interested': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+  'Applied': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+  'Under Review': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+  'Accepted': 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200',
+  'Rejected': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+  'Not a Fit': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+};
+
+const statusOptions: ApplicationStatus[] = ['Interested', 'Applied', 'Under Review', 'Accepted', 'Rejected', 'Not a Fit'];
+
+export default function ApplicationsPage() {
+  const { applications, updateApplicationStatus } = useAppContext();
+
+  return (
+    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+      <div className="flex items-center justify-between space-y-2">
+        <h2 className="text-3xl font-bold tracking-tight">My Applications</h2>
+      </div>
+
+      {applications.length > 0 ? (
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {applications.map((app, index) => (
+            <Card key={index} className="flex flex-col">
+              <CardHeader>
+                <CardTitle className="text-xl">{app.scholarship.scholarshipName}</CardTitle>
+                <CardDescription>Amount: {app.scholarship.amount} | Deadline: {app.scholarship.deadline}</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow space-y-4">
+                 <div>
+                  <label className="text-sm font-medium text-muted-foreground">Status</label>
+                  <Select
+                    value={app.status}
+                    onValueChange={(value: ApplicationStatus) => updateApplicationStatus(app.scholarship.scholarshipName, value)}
+                  >
+                    <SelectTrigger className="w-full mt-1">
+                      <SelectValue placeholder="Update status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusOptions.map(status => (
+                        <SelectItem key={status} value={status}>{status}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                 </div>
+              </CardContent>
+              <CardFooter className="flex justify-between items-center">
+                <Badge className={`${statusColors[app.status]} border-0`}>{app.status}</Badge>
+                <Button variant="outline" size="sm" asChild>
+                  <a href={app.scholarship.link} target="_blank" rel="noopener noreferrer">
+                    Visit Site <ExternalLink className="ml-2 h-4 w-4" />
+                  </a>
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-16 border-2 border-dashed rounded-lg">
+          <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+          <h3 className="mt-4 text-lg font-semibold">No Tracked Applications</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Start by finding scholarships and tracking them.
+          </p>
+          <Button className="mt-6" asChild>
+            <Link href="/scholarships">Find Scholarships</Link>
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
