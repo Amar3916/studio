@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import {googleSearchTool} from '@genkit-ai/googleai';
 
 const AnswerScholarshipQuestionInputSchema = z.object({
   question: z.string().describe('The question about scholarships.'),
@@ -25,34 +26,16 @@ export async function answerScholarshipQuestion(input: AnswerScholarshipQuestion
   return answerScholarshipQuestionFlow(input);
 }
 
-const webSearchTool = ai.defineTool(
-  {
-    name: 'webSearch',
-    description: 'Searches the web for information on a given topic. Use this for questions about specific scholarships, financial aid programs, or any other topic that requires up-to-date information.',
-    inputSchema: z.object({
-      query: z.string(),
-    }),
-    outputSchema: z.string(),
-  },
-  async (input) => {
-    // In a real app, this would be a call to a search API like Google Search.
-    // For now, we will simulate a search result.
-    console.log(`Simulating web search for: ${input.query}`);
-    return `Web search results for "${input.query}" indicate that details should be looked up on the official website for the most accurate information.`;
-  }
-);
-
-
 const prompt = ai.definePrompt({
   name: 'answerScholarshipQuestionPrompt',
   input: {schema: AnswerScholarshipQuestionInputSchema},
   output: {schema: AnswerScholarshipQuestionOutputSchema},
-  tools: [webSearchTool],
+  tools: [googleSearchTool],
   prompt: `You are an AI assistant helping students with questions about scholarships.
 
   Your primary goal is to provide accurate and helpful information.
-  If a user asks about a specific scholarship, use the webSearch tool to find the most current details.
-  Always encourage users to verify details on the official scholarship websites.
+  If a user asks about a specific scholarship, current deadlines, or any information that requires up-to-date, real-world knowledge, use the googleSearchTool to find the most current details.
+  Always encourage users to verify details on the official scholarship websites, and provide the source link when you can.
 
   Answer the following question:
   {{question}}
