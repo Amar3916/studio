@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { headers } from 'next/headers';
-import { Application, ApplicationStatus } from '@/lib/types';
+import { Application, ApplicationStatus, ChecklistItem } from '@/lib/types';
+import { generateApplicationChecklist } from '@/lib/actions';
 
 // GET all applications for a user
 export async function GET(req: NextRequest) {
@@ -51,10 +52,23 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ message: 'Application already tracked.' }, { status: 409 });
     }
 
+    // Generate checklist
+    const checklistResult = await generateApplicationChecklist({
+      scholarshipName: scholarship.scholarshipName,
+      scholarshipDescription: scholarship.description,
+    });
+    
+    const checklist: ChecklistItem[] = checklistResult.tasks.map(task => ({
+        _id: new ObjectId(),
+        task: task,
+        completed: false
+    }));
+
     const newApplication: Omit<Application, '_id'> = {
       userId: new ObjectId(userId),
       scholarship: scholarship,
       status: 'Interested',
+      checklist: checklist,
     };
 
     const result = await db.collection('applications').insertOne(newApplication);

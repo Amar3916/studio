@@ -21,9 +21,16 @@ export type Scholarship = ScholarshipRecommendationOutput[0];
 
 export type ApplicationStatus = 'Interested' | 'Applied' | 'Under Review' | 'Accepted' | 'Rejected' | 'Not a Fit';
 
+export type ChecklistItem = {
+    _id: string | ObjectId;
+    task: string;
+    completed: boolean;
+};
+
 export type Application = {
   _id?: string | ObjectId;
   userId?: string | ObjectId;
   scholarship: Scholarship;
   status: ApplicationStatus;
+  checklist?: ChecklistItem[];
 };

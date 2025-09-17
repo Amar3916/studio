@@ -9,7 +9,8 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import scholarships from '@/data/scholarships.json';
+import scholarshipsData from '@/data/scholarships.json';
+import clientPromise from '@/lib/mongodb';
 
 // Define the schema for student profile data (input)
 const ScholarshipRecommendationInputSchema = z.object({
@@ -85,13 +86,22 @@ const personalizedScholarshipRecommendationsFlow = ai.defineFlow(
     outputSchema: ScholarshipRecommendationOutputSchema,
   },
   async (studentProfile) => {
-    // In a real-world RAG application, you would fetch this from a vector DB.
-    // For this example, we'll just use the full list from our JSON file.
-    const availableScholarships = scholarships;
+    const client = await clientPromise;
+    const db = client.db();
+    const scholarshipsCollection = db.collection('scholarships');
+
+    // Seed the database if it's empty
+    const count = await scholarshipsCollection.countDocuments();
+    if (count === 0) {
+      console.log('Seeding scholarships collection...');
+      await scholarshipsCollection.insertMany(scholarshipsData);
+    }
+    
+    const availableScholarships = await scholarshipsCollection.find({}).project({_id: 0}).toArray();
     
     const {output} = await personalizedScholarshipRecommendationsPrompt({
         studentProfile,
-        scholarships: availableScholarships
+        scholarships: availableScholarships as z.infer<typeof ScholarshipSchema>[]
     });
     
     return output || [];

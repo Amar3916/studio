@@ -4,13 +4,16 @@ import useSWR from 'swr';
 import axios from 'axios';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ApplicationStatus, Application, Scholarship } from '@/lib/types';
+import { ApplicationStatus, Application, ChecklistItem } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, ExternalLink, Loader2 } from 'lucide-react';
+import { FileText, ExternalLink, Loader2, ListChecks, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 const statusColors: { [key in ApplicationStatus]: string } = {
   'Interested': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
@@ -46,6 +49,38 @@ export default function ApplicationsPage() {
     }
   };
 
+  const updateChecklistItem = async (applicationId: string, checklistItemId: string, completed: boolean) => {
+    try {
+      await axios.put(`/api/applications/checklist`, { applicationId, checklistItemId, completed });
+      mutate(
+        applications?.map(app =>
+          app._id === applicationId
+            ? {
+                ...app,
+                checklist: app.checklist?.map(item =>
+                  item._id === checklistItemId ? { ...item, completed } : item
+                ),
+              }
+            : app
+        ),
+        false
+      );
+    } catch (err) {
+      console.error(err);
+      toast({
+        variant: "destructive",
+        title: "Checklist Update Failed",
+        description: "Could not update the checklist item.",
+      });
+    }
+  }
+
+  const getChecklistProgress = (checklist: ChecklistItem[] = []) => {
+    if (checklist.length === 0) return 0;
+    const completed = checklist.filter(item => item.completed).length;
+    return (completed / checklist.length) * 100;
+  }
+
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
@@ -79,7 +114,7 @@ export default function ApplicationsPage() {
           </p>
         </div>
       ) : applications.length > 0 ? (
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
           {applications.map((app) => (
             <Card key={app._id} className="flex flex-col">
               <CardHeader>
@@ -87,7 +122,7 @@ export default function ApplicationsPage() {
                 <CardDescription>Amount: {app.scholarship.amount} | Deadline: {app.scholarship.deadline}</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow space-y-4">
-                 <div>
+                <div>
                   <label className="text-sm font-medium text-muted-foreground">Status</label>
                   <Select
                     value={app.status}
@@ -102,9 +137,35 @@ export default function ApplicationsPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                 </div>
+                </div>
+                {app.checklist && app.checklist.length > 0 && (
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="checklist">
+                      <AccordionTrigger>
+                        <div className='flex items-center gap-2'>
+                          <ListChecks className="h-5 w-5" />
+                          <span>Application Checklist ({Math.round(getChecklistProgress(app.checklist))}% complete)</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-2 pt-2">
+                        {app.checklist.map(item => (
+                          <div key={item._id as string} className="flex items-center gap-2 rounded-md bg-muted/50 p-2">
+                            <Checkbox 
+                              id={item._id as string}
+                              checked={item.completed}
+                              onCheckedChange={(checked) => updateChecklistItem(app._id as string, item._id as string, !!checked)}
+                            />
+                            <Label htmlFor={item._id as string} className={`flex-1 text-sm ${item.completed ? 'line-through text-muted-foreground' : ''}`}>
+                              {item.task}
+                            </Label>
+                          </div>
+                        ))}
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                )}
               </CardContent>
-              <CardFooter className="flex justify-between items-center">
+              <CardFooter className="flex justify-between items-center pt-4">
                 <Badge className={`${statusColors[app.status]} border-0`}>{app.status}</Badge>
                 <Button variant="outline" size="sm" asChild>
                   <a href={app.scholarship.link} target="_blank" rel="noopener noreferrer">
