@@ -10,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { getScholarshipRecommendations } from '@/lib/actions';
 import { Scholarship, Profile } from '@/lib/types';
-import { ArrowRight, Lightbulb, GraduationCap, DollarSign, Calendar, Percent, ExternalLink } from 'lucide-react';
+import { ArrowRight, Lightbulb, GraduationCap, DollarSign, Calendar, Percent, ExternalLink, Loader2 } from 'lucide-react';
 import useSWR from 'swr';
 import axios from 'axios';
 
