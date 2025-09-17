@@ -15,33 +15,59 @@ import {
 } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAppContext } from '@/context/AppContext';
 import { useToast } from '@/hooks/use-toast';
 import { Profile } from '@/lib/types';
-import { User, Book, DollarSign, Award } from 'lucide-react';
+import { User, Book, DollarSign, Award, Loader2 } from 'lucide-react';
+import useSWR, { useSWRConfig } from 'swr';
+import axios from 'axios';
+import { useEffect } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const formSchema = z.object({
-  academicInfo: z.string().min(10, 'Please provide more details about your academic background.'),
-  financialInfo: z.string().min(10, 'Please provide more details about your financial situation.'),
-  achievementInfo: z.string().min(10, 'Please list some of your achievements.'),
-  categoryInfo: z.string().min(10, 'Please provide some personal background information.'),
+  academicInfo: z.string().min(10, 'Please provide more details about your academic background.').or(z.literal('')),
+  financialInfo: z.string().min(10, 'Please provide more details about your financial situation.').or(z.literal('')),
+  achievementInfo: z.string().min(10, 'Please list some of your achievements.').or(z.literal('')),
+  categoryInfo: z.string().min(10, 'Please provide some personal background information.').or(z.literal('')),
 });
 
+const fetcher = (url: string) => axios.get(url).then(res => res.data);
+
 export default function ProfilePage() {
-  const { profile, setProfile } = useAppContext();
   const { toast } = useToast();
+  const { data: profile, error, isLoading } = useSWR<Profile>('/api/profile', fetcher);
+  const { mutate } = useSWRConfig();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: profile,
+    defaultValues: {
+      academicInfo: '',
+      financialInfo: '',
+      achievementInfo: '',
+      categoryInfo: '',
+    },
   });
+  
+  useEffect(() => {
+    if (profile) {
+      form.reset(profile);
+    }
+  }, [profile, form]);
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    setProfile(values as Profile);
-    toast({
-      title: 'Profile Updated',
-      description: 'Your information has been saved successfully.',
-    });
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const { data } = await axios.post('/api/profile', values);
+      mutate('/api/profile', data, false);
+      toast({
+        title: 'Profile Updated',
+        description: 'Your information has been saved successfully.',
+      });
+    } catch (error) {
+       toast({
+        variant: 'destructive',
+        title: 'Update Failed',
+        description: 'Could not save your profile. Please try again.',
+      });
+    }
   }
 
   const fields = [
@@ -50,6 +76,36 @@ export default function ProfilePage() {
     { name: 'achievementInfo', label: 'Achievements & Activities', description: 'List your awards, honors, extracurricular activities, and volunteer work.', icon: Award },
     { name: 'categoryInfo', label: 'Personal Background', description: 'Share demographic information, first-generation status, or any other relevant personal details.', icon: User },
   ];
+
+  if (isLoading) {
+      return (
+        <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+            <div className="flex items-center justify-between space-y-2">
+                <h2 className="text-3xl font-bold tracking-tight">My Profile</h2>
+            </div>
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-1/4" />
+                    <Skeleton className="h-4 w-3/4" />
+                </CardHeader>
+                <CardContent className="space-y-8">
+                    {[...Array(4)].map((_, i) => (
+                        <div key={i} className="space-y-2">
+                            <Skeleton className="h-6 w-1/3" />
+                            <Skeleton className="h-24 w-full" />
+                            <Skeleton className="h-4 w-2/3" />
+                        </div>
+                    ))}
+                    <Skeleton className="h-10 w-24" />
+                </CardContent>
+            </Card>
+        </div>
+      )
+  }
+
+  if (error) {
+    return <div className="p-8 text-center text-red-500">Failed to load profile. Please try refreshing the page.</div>
+  }
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -91,7 +147,10 @@ export default function ProfilePage() {
                 />
               ))}
 
-              <Button type="submit">Save Profile</Button>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Profile
+              </Button>
             </form>
           </Form>
         </CardContent>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+import { useAppContext } from '@/context/AppContext';
 import axios, { AxiosError } from 'axios';
 
 const formSchema = z.object({
@@ -22,7 +21,7 @@ const formSchema = z.object({
 export default function LoginPage() {
   const { toast } = useToast();
   const router = useRouter();
-  const { login } = useAuth();
+  const { login } = useAppContext();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -36,12 +35,15 @@ export default function LoginPage() {
     try {
       const response = await axios.post('/api/auth/login', values);
       if (response.status === 200) {
+        // Set cookie from response
+        document.cookie = `token=${response.data.token}; path=/; max-age=${60 * 60 * 24}; samesite=lax`;
         login(response.data.user);
         toast({
           title: 'Login Successful',
           description: 'Welcome back!',
         });
         router.push('/');
+        router.refresh(); // to re-run middleware and get user context
       }
     } catch (error) {
       const axiosError = error as AxiosError<{ message: string }>;

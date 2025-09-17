@@ -3,19 +3,26 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { useAppContext } from '@/context/AppContext';
 import { ArrowRight, Bot, FileText, GraduationCap, User } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { placeholderImages } from '@/lib/placeholder-images';
+import useSWR from 'swr';
+import axios from 'axios';
+import { Profile, Application } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 export default function DashboardPage() {
-  const { profile, applications } = useAppContext();
+  const { data: profile, isLoading: isLoadingProfile } = useSWR<Profile>('/api/profile', fetcher);
+  const { data: applications, isLoading: isLoadingApplications } = useSWR<Application[]>('/api/applications', fetcher);
   
   const heroImage = placeholderImages.find(img => img.id === 'dashboard-hero');
 
-  const profileCompletion =
-    (Object.values(profile).filter(Boolean).length / Object.keys(profile).length) * 100;
+  const profileCompletion = profile
+    ? (Object.values(profile).filter(value => typeof value === 'string' && value).length / Object.keys(profile).length) * 100
+    : 0;
 
   const quickLinks = [
     { title: 'My Profile', description: 'Keep your profile updated for the best matches.', href: '/profile', icon: User },
@@ -60,8 +67,17 @@ export default function DashboardPage() {
               <User className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{Math.round(profileCompletion)}%</div>
-              <Progress value={profileCompletion} className="mt-2 h-2" />
+              {isLoadingProfile ? (
+                <>
+                  <Skeleton className="h-8 w-1/4 mb-2" />
+                  <Skeleton className="h-2 w-full" />
+                </>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold">{Math.round(profileCompletion)}%</div>
+                  <Progress value={profileCompletion} className="mt-2 h-2" />
+                </>
+              )}
             </CardContent>
           </Card>
           <Card>
@@ -70,10 +86,19 @@ export default function DashboardPage() {
               <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{applications.length}</div>
-              <p className="text-xs text-muted-foreground">
-                {applications.filter(a => a.status === 'Applied').length} submitted
-              </p>
+               {isLoadingApplications ? (
+                 <>
+                  <Skeleton className="h-8 w-1/4 mb-2" />
+                  <Skeleton className="h-4 w-1/2" />
+                 </>
+               ) : (
+                <>
+                  <div className="text-2xl font-bold">{applications?.length ?? 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {applications?.filter(a => a.status === 'Applied').length ?? 0} submitted
+                  </p>
+                </>
+               )}
             </CardContent>
           </Card>
         </div>

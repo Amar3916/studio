@@ -1,13 +1,16 @@
 'use client';
 
-import { useAppContext } from '@/context/AppContext';
+import useSWR from 'swr';
+import axios from 'axios';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ApplicationStatus, Scholarship } from '@/lib/types';
+import { ApplicationStatus, Application, Scholarship } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, ExternalLink } from 'lucide-react';
+import { FileText, ExternalLink, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const statusColors: { [key in ApplicationStatus]: string } = {
   'Interested': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
@@ -20,8 +23,28 @@ const statusColors: { [key in ApplicationStatus]: string } = {
 
 const statusOptions: ApplicationStatus[] = ['Interested', 'Applied', 'Under Review', 'Accepted', 'Rejected', 'Not a Fit'];
 
+const fetcher = (url: string) => axios.get(url).then(res => res.data);
+
 export default function ApplicationsPage() {
-  const { applications, updateApplicationStatus } = useAppContext();
+  const { toast } = useToast();
+  const { data: applications, error, mutate, isLoading } = useSWR<Application[]>('/api/applications', fetcher);
+
+  const updateApplicationStatus = async (applicationId: string, status: ApplicationStatus) => {
+    try {
+      await axios.put(`/api/applications`, { applicationId, status });
+      mutate(applications?.map(app => app._id === applicationId ? { ...app, status } : app), false);
+      toast({
+        title: "Status Updated",
+        description: `Application status changed to "${status}".`,
+      });
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Update Failed",
+        description: "Could not update the application status.",
+      });
+    }
+  };
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -29,10 +52,36 @@ export default function ApplicationsPage() {
         <h2 className="text-3xl font-bold tracking-tight">My Applications</h2>
       </div>
 
-      {applications.length > 0 ? (
+      {isLoading ? (
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {applications.map((app, index) => (
-            <Card key={index} className="flex flex-col">
+          {[...Array(3)].map((_, i) => (
+             <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-10 w-full" />
+              </CardContent>
+              <CardFooter className="flex justify-between items-center">
+                 <Skeleton className="h-6 w-20" />
+                 <Skeleton className="h-10 w-24" />
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      ) : error || !applications ? (
+        <div className="text-center py-16 border-2 border-dashed rounded-lg">
+          <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+          <h3 className="mt-4 text-lg font-semibold">Could Not Load Applications</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            There was an error fetching your applications. Please try again later.
+          </p>
+        </div>
+      ) : applications.length > 0 ? (
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {applications.map((app) => (
+            <Card key={app._id} className="flex flex-col">
               <CardHeader>
                 <CardTitle className="text-xl">{app.scholarship.scholarshipName}</CardTitle>
                 <CardDescription>Amount: {app.scholarship.amount} | Deadline: {app.scholarship.deadline}</CardDescription>
@@ -42,7 +91,7 @@ export default function ApplicationsPage() {
                   <label className="text-sm font-medium text-muted-foreground">Status</label>
                   <Select
                     value={app.status}
-                    onValueChange={(value: ApplicationStatus) => updateApplicationStatus(app.scholarship.scholarshipName, value)}
+                    onValueChange={(value: ApplicationStatus) => updateApplicationStatus(app._id as string, value)}
                   >
                     <SelectTrigger className="w-full mt-1">
                       <SelectValue placeholder="Update status" />

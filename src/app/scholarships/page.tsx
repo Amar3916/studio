@@ -7,21 +7,25 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAppContext } from '@/context/AppContext';
 import { useToast } from '@/hooks/use-toast';
 import { getScholarshipRecommendations } from '@/lib/actions';
-import { Scholarship } from '@/lib/types';
+import { Scholarship, Profile } from '@/lib/types';
 import { ArrowRight, Lightbulb, GraduationCap, DollarSign, Calendar, Percent, ExternalLink } from 'lucide-react';
+import useSWR from 'swr';
+import axios from 'axios';
+
+const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 export default function ScholarshipsPage() {
-  const { profile, addApplication } = useAppContext();
+  const { data: profile, isLoading: isLoadingProfile } = useSWR<Profile>('/api/profile', fetcher);
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<Scholarship[]>([]);
 
-  const isProfileComplete = Object.values(profile).every(value => value && value.length > 10);
+  const isProfileComplete = profile && Object.values(profile).every(value => typeof value === 'string' && value.length > 10);
 
   const handleFindScholarships = async () => {
+    if (!profile) return;
     setLoading(true);
     setRecommendations([]);
     try {
@@ -47,14 +51,36 @@ export default function ScholarshipsPage() {
     }
   };
 
-  const handleTrackApplication = (scholarship: Scholarship) => {
-    addApplication(scholarship);
-    toast({
-      title: 'Application Added',
-      description: `"${scholarship.scholarshipName}" is now being tracked.`,
-      action: <Button variant="link" size="sm" asChild><Link href="/applications">View</Link></Button>
-    });
+  const handleTrackApplication = async (scholarship: Scholarship) => {
+    try {
+      await axios.post('/api/applications', { scholarship });
+      toast({
+        title: 'Application Added',
+        description: `"${scholarship.scholarshipName}" is now being tracked.`,
+        action: <Button variant="link" size="sm" asChild><Link href="/applications">View</Link></Button>
+      });
+    } catch (error) {
+       toast({
+        variant: 'destructive',
+        title: 'Already Tracked',
+        description: `You are already tracking "${scholarship.scholarshipName}".`,
+      });
+    }
   };
+  
+  if (isLoadingProfile) {
+    return (
+       <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+        <div className="flex items-center justify-between space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Find Scholarships</h2>
+        </div>
+        <Skeleton className="h-24 w-full" />
+        <div className="text-center py-16">
+            <Loader2 className="mx-auto h-12 w-12 text-muted-foreground animate-spin" />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
